@@ -99,9 +99,15 @@
             
             if (match) {
                 const [, letter, expression] = match;
-                functions[letter] = expression;
-                updateFunctionList();
-                document.getElementById('function').value = '';
+                try {
+                    // Test compile the expression to catch errors early
+                    math.compile(expression);
+                    functions[letter] = expression;
+                    updateFunctionList();
+                    document.getElementById('function').value = '';
+                } catch (error) {
+                    alert(`Error in function definition: ${error.message}`);
+                }
             } else {
                 alert("Invalid function format. Please use the format 'letter(x) = expression'");
             }
@@ -128,9 +134,13 @@
             try {
                 const x = math.evaluate(valueInput);
                 for (const [letter, expression] of Object.entries(functions)) {
-                    const expr = math.compile(expression);
-                    const result = expr.evaluate({x: x});
-                    resultDiv.innerHTML += `<p>${letter}(${x}) = ${result}</p>`;
+                    try {
+                        const expr = math.compile(expression);
+                        const result = expr.evaluate({x: x});
+                        resultDiv.innerHTML += `<p>${letter}(${x}) = ${result}</p>`;
+                    } catch (error) {
+                        resultDiv.innerHTML += `<p style="color: red;">Error evaluating ${letter}(x): ${error.message}</p>`;
+                    }
                 }
             } catch (error) {
                 resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
@@ -143,23 +153,30 @@
             const step = (xMax - xMin) / 100;
 
             const datasets = Object.entries(functions).map(([letter, expression]) => {
-                const expr = math.compile(expression);
-                const data = [];
-                for (let x = xMin; x <= xMax; x += step) {
-                    try {
-                        const y = expr.evaluate({x: x});
-                        data.push({x, y});
-                    } catch (error) {
-                        console.error(`Error evaluating ${letter}(${x}):`, error);
+                try {
+                    const expr = math.compile(expression);
+                    const data = [];
+                    for (let x = xMin; x <= xMax; x += step) {
+                        try {
+                            const y = expr.evaluate({x: x});
+                            if (isFinite(y)) {
+                                data.push({x, y});
+                            }
+                        } catch (error) {
+                            console.error(`Error evaluating ${letter}(${x}):`, error);
+                        }
                     }
+                    return {
+                        label: `${letter}(x)`,
+                        data: data,
+                        borderColor: getRandomColor(),
+                        fill: false
+                    };
+                } catch (error) {
+                    console.error(`Error compiling function ${letter}(x):`, error);
+                    return null;
                 }
-                return {
-                    label: `${letter}(x)`,
-                    data: data,
-                    borderColor: getRandomColor(),
-                    fill: false
-                };
-            });
+            }).filter(dataset => dataset !== null);
 
             const ctx = document.getElementById('functionGraph').getContext('2d');
             
