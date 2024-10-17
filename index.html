@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mathematical Function Calculator</title>
+    <title>Mathematical Function Calculator and Grapher</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f0f0f0;
@@ -25,7 +26,7 @@
             margin-bottom: 5px;
             color: #555;
         }
-        input[type="text"] {
+        input[type="text"], input[type="number"] {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
@@ -39,18 +40,19 @@
             border-radius: 4px;
             cursor: pointer;
             margin-right: 10px;
+            margin-bottom: 10px;
         }
         button:hover {
             background-color: #45a049;
         }
-        #result {
+        #result, #functionList {
             margin-top: 20px;
             padding: 15px;
             background-color: #fff;
             border-radius: 4px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        #functionList {
+        #graphContainer {
             margin-top: 20px;
             padding: 15px;
             background-color: #fff;
@@ -60,7 +62,7 @@
     </style>
 </head>
 <body>
-    <h1>Mathematical Function Calculator</h1>
+    <h1>Mathematical Function Calculator and Grapher</h1>
     <div class="input-group">
         <label for="function">Enter a function (e.g., f(x) = 2*x^2 + 3*x + 1):</label>
         <input type="text" id="function" placeholder="e.g., f(x) = 2*x^2 + 3*x + 1">
@@ -74,9 +76,22 @@
     </div>
     <button onclick="calculate()">Calculate</button>
     <div id="result"></div>
+    <div class="input-group">
+        <label for="xMin">X-axis minimum:</label>
+        <input type="number" id="xMin" value="-10">
+    </div>
+    <div class="input-group">
+        <label for="xMax">X-axis maximum:</label>
+        <input type="number" id="xMax" value="10">
+    </div>
+    <button onclick="drawGraph()">Draw Graph</button>
+    <div id="graphContainer">
+        <canvas id="functionGraph"></canvas>
+    </div>
 
     <script>
         let functions = {};
+        let chart;
 
         function addFunction() {
             const functionInput = document.getElementById('function').value;
@@ -120,6 +135,74 @@
             } catch (error) {
                 resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
             }
+        }
+
+        function drawGraph() {
+            const xMin = parseFloat(document.getElementById('xMin').value);
+            const xMax = parseFloat(document.getElementById('xMax').value);
+            const step = (xMax - xMin) / 100;
+
+            const datasets = Object.entries(functions).map(([letter, expression]) => {
+                const expr = math.compile(expression);
+                const data = [];
+                for (let x = xMin; x <= xMax; x += step) {
+                    try {
+                        const y = expr.evaluate({x: x});
+                        data.push({x, y});
+                    } catch (error) {
+                        console.error(`Error evaluating ${letter}(${x}):`, error);
+                    }
+                }
+                return {
+                    label: `${letter}(x)`,
+                    data: data,
+                    borderColor: getRandomColor(),
+                    fill: false
+                };
+            });
+
+            const ctx = document.getElementById('functionGraph').getContext('2d');
+            
+            if (chart) {
+                chart.destroy();
+            }
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'x'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'y'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
         }
     </script>
 </body>
