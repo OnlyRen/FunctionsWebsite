@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mathematical Function Calculator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        #functionList {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Mathematical Function Calculator</h1>
+    <div class="input-group">
+        <label for="function">Enter a function (e.g., f(x) = 2*x^2 + 3*x + 1):</label>
+        <input type="text" id="function" placeholder="e.g., f(x) = 2*x^2 + 3*x + 1">
+    </div>
+    <button onclick="addFunction()">Add Function</button>
+    <button onclick="clearFunctions()">Clear All Functions</button>
+    <div id="functionList"></div>
+    <div class="input-group">
+        <label for="value">Enter a value for x:</label>
+        <input type="text" id="value" placeholder="e.g., 5">
+    </div>
+    <button onclick="calculate()">Calculate</button>
+    <div id="result"></div>
+
+    <script>
+        let functions = {};
+
+        function addFunction() {
+            const functionInput = document.getElementById('function').value;
+            const match = functionInput.match(/([a-z])\(x\)\s*=\s*(.*)/i);
+            
+            if (match) {
+                const [, letter, expression] = match;
+                functions[letter] = expression;
+                updateFunctionList();
+                document.getElementById('function').value = '';
+            } else {
+                alert("Invalid function format. Please use the format 'letter(x) = expression'");
+            }
+        }
+
+        function updateFunctionList() {
+            const functionListDiv = document.getElementById('functionList');
+            functionListDiv.innerHTML = '<h3>Defined Functions:</h3>';
+            for (const [letter, expression] of Object.entries(functions)) {
+                functionListDiv.innerHTML += `<p>${letter}(x) = ${expression}</p>`;
+            }
+        }
+
+        function clearFunctions() {
+            functions = {};
+            updateFunctionList();
+        }
+
+        function calculate() {
+            const valueInput = document.getElementById('value').value;
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';
+
+            try {
+                const x = math.evaluate(valueInput);
+                for (const [letter, expression] of Object.entries(functions)) {
+                    const expr = math.compile(expression);
+                    const result = expr.evaluate({x: x});
+                    resultDiv.innerHTML += `<p>${letter}(${x}) = ${result}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
