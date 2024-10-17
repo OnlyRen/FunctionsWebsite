@@ -12,26 +12,34 @@
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f0f0f0;
+            background-color: #1e1e1e;
+            color: #e0e0e0;
         }
+
         h1 {
-            color: #333;
+            color: #ffffff;
             text-align: center;
         }
+
         .input-group {
             margin-bottom: 15px;
         }
+
         label {
             display: block;
             margin-bottom: 5px;
-            color: #555;
+            color: #b0b0b0;
         }
+
         input[type="text"], input[type="number"] {
             width: 100%;
             padding: 8px;
-            border: 1px solid #ddd;
+            border: 1px solid #444;
             border-radius: 4px;
+            background-color: #2a2a2a;
+            color: #e0e0e0;
         }
+
         button {
             background-color: #4CAF50;
             color: white;
@@ -42,22 +50,25 @@
             margin-right: 10px;
             margin-bottom: 10px;
         }
-        button:hover {
-            background-color: #45a049;
-        }
+
+            button:hover {
+                background-color: #45a049;
+            }
+
         #result, #functionList {
             margin-top: 20px;
             padding: 15px;
-            background-color: #fff;
+            background-color: #2a2a2a;
             border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
+
         #graphContainer {
             margin-top: 20px;
             padding: 15px;
-            background-color: #fff;
+            background-color: #2a2a2a;
             border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
     </style>
 </head>
@@ -96,12 +107,12 @@
         function addFunction() {
             const functionInput = document.getElementById('function').value;
             const match = functionInput.match(/([a-z])\(x\)\s*=\s*(.*)/i);
-            
+
             if (match) {
                 const [, letter, expression] = match;
                 try {
-                    // Test compile the expression to catch errors early
-                    math.compile(expression);
+                    // Use math.parse instead of math.compile for safer parsing
+                    math.parse(expression);
                     functions[letter] = expression;
                     updateFunctionList();
                     document.getElementById('function').value = '';
@@ -135,8 +146,8 @@
                 const x = math.evaluate(valueInput);
                 for (const [letter, expression] of Object.entries(functions)) {
                     try {
-                        const expr = math.compile(expression);
-                        const result = expr.evaluate({x: x});
+                        // Use a safer evaluation method
+                        const result = math.evaluate(expression, { x: x });
                         resultDiv.innerHTML += `<p>${letter}(${x}) = ${result}</p>`;
                     } catch (error) {
                         resultDiv.innerHTML += `<p style="color: red;">Error evaluating ${letter}(x): ${error.message}</p>`;
@@ -154,13 +165,12 @@
 
             const datasets = Object.entries(functions).map(([letter, expression]) => {
                 try {
-                    const expr = math.compile(expression);
                     const data = [];
                     for (let x = xMin; x <= xMax; x += step) {
                         try {
-                            const y = expr.evaluate({x: x});
+                            const y = math.evaluate(expression, { x: x });
                             if (isFinite(y)) {
-                                data.push({x, y});
+                                data.push({ x, y });
                             }
                         } catch (error) {
                             console.error(`Error evaluating ${letter}(${x}):`, error);
@@ -173,13 +183,13 @@
                         fill: false
                     };
                 } catch (error) {
-                    console.error(`Error compiling function ${letter}(x):`, error);
+                    console.error(`Error processing function ${letter}(x):`, error);
                     return null;
                 }
             }).filter(dataset => dataset !== null);
 
             const ctx = document.getElementById('functionGraph').getContext('2d');
-            
+
             if (chart) {
                 chart.destroy();
             }
